@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quizlet-Style Quiz App</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --accent-color: #4cb5ae;
+            --text-color: #333;
+            --light-color: #f5f5f5;
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--light-color);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-accent {
+            background-color: var(--accent-color);
+        }
+        
+        .btn-accent:hover {
+            background-color: #3a9c96;
+        }
+        
+        #welcome-screen, #quiz-screen, #results-screen, #editor-screen {
+            display: none;
+        }
+        
+        #welcome-screen.active, #quiz-screen.active, #results-screen.active, #editor-screen.active {
+            display: block;
+        }
+        
+        .options-container {
+            margin: 20px 0;
+        }
+        
+        .option {
+            display: block;
+            background-color: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 4px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .option:hover {
+            background-color: #e6f0fa;
+        }
+        
+        .option.selected {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .option.correct {
+            background-color: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+        
+        .option.incorrect {
+            background-color: var(--error-color);
+            color: white;
+            border-color: var(--error-color);
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent-color);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .feedback {
+            text-align: center;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .feedback.correct {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success-color);
+        }
+        
+        .feedback.incorrect {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--error-color);
+        }
+        
+        .result-summary {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .percentage {
+            display: block;
+            font-size: 48px;
+            color: var(--accent-color);
+            margin: 20px 0;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 250px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        
+        .hint {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .error-message {
+            color: var(--error-color);
+            margin-top: 10px;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .toggle-label {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div id="welcome-screen" class="container active">
+        <h1>AF1729 quiz</h1>
+        <p>Quiz frågor från gamla tentor. 60% för godkänt, allt under är skill issue</p>
+        
+        <div class="toggle-container">
+            <span class="toggle-label">Random position på frågorna:</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="randomize-toggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="controls">
+            <button id="start-sample-btn" class="btn">Starta Quiz</button>
+            <button id="create-quiz-btn" class="btn btn-accent">Lägg till frågor</button>
+        </div>
+    </div>
+    
+    <div id="editor-screen" class="container">
+        <h2>Create Your Quiz</h2>
+        <p class="hint">skriv era  frågor för quizet här, varje fråga behöver en "question"-text, en array med "options", och indexet för det "correct" svaret (0-baserat). Ni har kört en hel progrommering kurs kan ni inte dehär äre sorligt.</p>
+        
+        <textarea id="quiz-editor" placeholder='[
+  {
+    "question": "What is the capital of France?",
+    "options": ["London", "Berlin", "Paris", "Madrid"],
+    "correct": 2
+  },
+  {
+    "question": "Which planet is known as the Red Planet?",
+    "options": ["Earth", "Mars", "Jupiter", "Venus"],
+    "correct": 1
+  }
+]'></textarea>
+        
+        <div id="editor-error" class="error-message"></div>
+        
+        <div class="toggle-container">
+            <span class="toggle-label">random positions på frågor:</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="editor-randomize-toggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="controls">
+            <button id="save-quiz-btn" class="btn btn-accent">Save & Start Quiz</button>
+            <button id="back-from-editor-btn" class="btn">Back</button>
+        </div>
+    </div>
+    
+    <div id="quiz-screen" class="container">
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        
+        <h2 id="question-text">Question goes here</h2>
+        
+        <div id="options-container" class="options-container">
+            <!-- Options will be added here dynamically -->
+        </div>
+        
+        <div id="feedback" class="feedback" style="display: none;"></div>
+        
+        <div class="controls">
+            <button id="next-btn" class="btn">Nästa</button>
+        </div>
+    </div>
+    
+    <div id="results-screen" class="container">
+        <h2>Quiz Resultat</h2>
+        
+        <div class="result-summary">
+            <span class="percentage" id="percentage">0%</span>
+            <p class="score">Du fick <span id="score">0</span> ut av <span id="total">0</span> frågor korrekt.</p>
+        </div>
+        
+        <div class="controls">
+            <button id="restart-btn" class="btn">Ta om Quiz</button>
+            <button id="home-btn" class="btn btn-accent">hem</button>
+        </div>
+    </div>
+    
+    <script>
+        // Quiz state
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOptionIndex = -1;
+        let answeredCurrentQuestion = false;
+        let shouldRandomizeOptions = true;
+        let currentOptionsMapping = [];
+        
+        // Sample quiz data
+        const sampleQuizData = [
+            {
+                question: "Vilket dokument innehåller Trafikverkets nationella val för valbara parametrar i Eurokoder i Sverige? (1p)",
+                options: ["EKS 10", "Krav Brobyggande", "Råd Brobyggande", "TSFS (tidigare TRVFS)"],
+                correct: 3
+            },
+            {
+                question: "Vilken handling innehåller Trafikverkets krav för dimensionering av broar? (1p)",
+                options: ["Krav Brobyggande", "Råd Brobyggande", "EKS 10", "TK Geo"],
+                correct: 0
+            },
+            {
+                question: "Vilket tillstånd råder i stadium II för armerat betongtvärsnitt? (1p)",
+                options: ["Osprucket", "Sprucket", "Krossad betong i tryckt betong", "Plastisering i dragen armeringsjärn"],
+                correct: 1
+            },
+            {
+                question: "Ange vilket gränstillstånd inkluderar stadium I och II? (1p)",
+                options: ["Bruksgränstillstånd", "Brottgränstillstånd", "Utmattningstillstånd", "Ingen av ovanstående alternativ"],
+                correct: 0
+            },
+            {
+                question: "Ange vilket gränstillstånd inkluderar stadium III? (1p)",
+                options: ["Bruksgränstillstånd", "Brottgränstillstånd", "Utmattningstillstånd", "Ingen av ovanstående alternativ"],
+                correct: 1
+            },
+            {
+                question: "Välj kriteriet som inte styr valet av täckande betongskikt? (1p)",
+                options: ["Utmattning", "Beständighet (exponeringsklass)", "Förankring (kraftöverföring)", "Ingen av ovanstående alternativ"],
+                correct: 0
+            },
+            {
+                question: "Frekvent lastkombination används för? (1p)",
+                options: [
+                    "Armering i Brottgränstillstånd (exponeringsklass)",
+                    "Kontroll av uppsprickning",
+                    "Armering m.h.t. krav på sprickvidd",
+                    "Ingen av ovanstående alternativ"
+                ],
+                correct: 1
+            },
+            {
+                question: "Kvasi-permanent lastkombination används för? (1p)",
+                options: [
+                    "Utmattning",
+                    "Armering i Brottgränstillstånd (exponeringsklass)",
+                    "Kontroll av uppsprickning",
+                    "Armering m.h.t. krav på sprickvidd"
+                ],
+                correct: 3
+            },
+            {
+                question: "Vid beräkning av grundläggnings stabilitet för bottenplatta för packad fyllning kontrolleras om konstruktionen glider (villkor för glidning). Vilka av följande krafter är drivande kraft för glidning?",
+                options: ["Horisontell kraft (H)", "Vertikal kraft (V)", "Friktionskraft mellan bottenplatta och fyllning", "Friktionskraft mellan ballasten i fyllningen"],
+                correct: 0
+            },
+            {
+                question: "Vilken uppsättning av lastkoefficienter enligt Eurokoder används för kontroll av grundläggningsstabilitet för stödmur på packad fyllning?",
+                options: ["Uppsättning A", "Uppsättning B", "Uppsättning C", "Ingen av ovanstående alternativ"],
+                correct: 0
+            },
+            {
+                question: "Vad skall väljas som minsta säkerhetsfaktor S vid kontroll av de tre kriterierna för grundläggningens stabilitet (Jämvikt) enligt ovan?",
+                options: ["1", "1,5", "1,8", "2"],
+                correct: 1
+            },
+            {
+                question: "Vid kontroll av grundläggningens stabilitet skall ett antal lastfall studeras. Välj vilket lastfall som ger alltid lägsta säkerhetsfaktor S för kontroll av risk för glidning?",
+                options: ["Vmin/Hmin", "Vmin/Hmax", "Vmax/Hmax", "Vmax/Hmin"],
+                correct: 1
+            },
+            {
+                question: "Vid kontroll av grundläggningens stabilitet beräknas tillhörande moment av alla karakteristiska laster till en specifik punkt (så kallade punkt A). Var ligger punkt A i stödmurens geometri?",
+                options: ["Underkant av bottenplattans baktass", "Anslutningen mellan mur och bottenplatta", "Underkant av bottenplattans framtass", "Underkant av bottenplattans mittpunkt"],
+                correct: 2
+            },
+            {
+                question: "I fall låg säkerhetsfaktor S erhålls vid de tre kontrollerna av grundläggningens stabilitet, hur man förhöjer säkerhetsfaktorn S genom att ändra på stödmurens geometri?",
+                options: ["Välj en högre mur", "Välj en breddare bottenplatta", "Välj en kortare bottenplatta", "Välj en breddare kantbalk"],
+                correct: 1
+            },
+            {
+                question: "Vid kontroll av grundläggningens stabilitet beräknas de drivande horisontella lasterna av jordtryck och överlast bakom en specifik punkt så kallade 'gardin'. Var placeras gardinen i stödmurens geometri?",
+                options: ["Vid baktassens ände", "Vid murens insida", "Vid mitten av bottenplattans bredd", "Vid framtassens ände"],
+                correct: 0
+            },
+            {
+                question: "Vilken fördelning används för den förenklade modellen av grundpåverkan under bottenplatta?",
+                options: ["Triangulär fördelning", "Rektangulär (konstant) fördelning", "Parabolisk fördelning", "Bilinjär fördelning"],
+                correct: 1
+            },
+            {
+                question: "I vilken uppsättning ingår formler 6.10a och 6.10b?",
+                options: ["Uppsättning C", "Uppsättning A", "Uppsättning B", "Uppsättning D"],
+                correct: 2
+            },
+            {
+                question: "Hur många snitt i bottenplattans baktass är optimalt (minsta nödvändiga) för dimensionering av bottenplatta m.h.t. avkortningen av armering?",
+                options: ["5 snitt", "3 snitt", "2 snitt", "1 snitt"],
+                correct: 1
+            },
+            {
+                question: "Var placeras horisontella laster av jordtryck och överlast vid dimensionering av mur?",
+                options: ["Bakom muren", "Bakom bottenplattans baktass", "3 meter bakom bottenplattans baktass", "1 meter bakom bottenplattans baktass"],
+                correct: 0
+            },
+            {
+                question: "Hur påverkas jordtryckskoefficienten av en lutande mur som lutar mot jordfyllningen?",
+                options: ["Ingen påverkan på koefficienten för jordtryck", "Reduktion av koefficienten för jordtryck", "Förhöjning av koefficienten för jordtryck", "Fördubbling av koefficienten för jordtryck"],
+                correct: 1
+            },
+            {
+                question: "Vad är beteckning för koefficienten för vilojordtryck?",
+                options: ["Ka", "Ko", "Kp", "Ks"],
+                correct: 1
+            },
+            {
+                question: "Vilken jordtryckskoefficient används om stödmuren kan deformeras under verkande jordtryck?",
+                options: ["Vilojordtryck", "Aktivt jordtryck", "Passivt jordtryck", "Ingen av ovanstående alternativ"],
+                correct: 1
+            },
+            {
+                question: "Vilken lastkoefficient används för grundpåverkan vid beräkning av största och minsta snittkraft (dvs V och H och Mill) i ett snitt i bottenplatta?",
+                options: ["1,35", "1,5", "1,0", "1,35*0,89"],
+                correct: 2
+            },
+            {
+                question: "Hur många snitt i mur är optimalt (minsta nödvändiga) för dimensionering av mur m.h.t. avkortningen av armering?",
+                options: ["5 snitt", "3 snitt", "2 snitt", "1 snitt"],
+                correct: 1
+            },
+            {
+                question: "Vilken av de nedanstående laster är variabellast?",
+                options: ["Betongens egentyngd", "Fyllningens egentyngd", "Trafiklast ovanpå stödmurens jordfyllda sida (överlast)", "Beklädnad"],
+                correct: 2
+            }
+        ];
+        
+        // DOM Elements
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const editorScreen = document.getElementById('editor-screen');
+        
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackElement = document.getElementById('feedback');
+        const progressBar = document.getElementById('progress-bar');
+        const nextButton = document.getElementById('next-btn');
+        
+        const percentageElement = document.getElementById('percentage');
+        const scoreElement = document.getElementById('score');
+        const totalElement = document.getElementById('total');
+        
+        const startSampleButton = document.getElementById('start-sample-btn');
+        const createQuizButton = document.getElementById('create-quiz-btn');
+        const saveQuizButton = document.getElementById('save-quiz-btn');
+        const restartButton = document.getElementById('restart-btn');
+        const homeButton = document.getElementById('home-btn');
+        const backFromEditorButton = document.getElementById('back-from-editor-btn');
+        
+        const quizEditor = document.getElementById('quiz-editor');
+        const editorError = document.getElementById('editor-error');
+        
+        const randomizeToggle = document.getElementById('randomize-toggle');
+        const editorRandomizeToggle = document.getElementById('editor-randomize-toggle');
+        
+        // Event Listeners
+        startSampleButton.addEventListener('click', () => {
+            shouldRandomizeOptions = randomizeToggle.checked;
+            startQuiz(sampleQuizData);
+        });
+        createQuizButton.addEventListener('click', showEditorScreen);
+        saveQuizButton.addEventListener('click', saveAndStartQuiz);
+        nextButton.addEventListener('click', handleNextButtonClick);
+        restartButton.addEventListener('click', restartQuiz);
+        homeButton.addEventListener('click', showWelcomeScreen);
+        backFromEditorButton.addEventListener('click', showWelcomeScreen);
+        
+        // Sync randomize toggles
+        randomizeToggle.addEventListener('change', () => {
+            editorRandomizeToggle.checked = randomizeToggle.checked;
+        });
+        
+        editorRandomizeToggle.addEventListener('change', () => {
+            randomizeToggle.checked = editorRandomizeToggle.checked;
+        });
+        
+        // Functions
+        function showScreen(screen) {
+            welcomeScreen.classList.remove('active');
+            quizScreen.classList.remove('active');
+            resultsScreen.classList.remove('active');
+            editorScreen.classList.remove('active');
+            
+            screen.classList.add('active');
+        }
+        
+        function showWelcomeScreen() {
+            showScreen(welcomeScreen);
+        }
+        
+        function showEditorScreen() {
+            showScreen(editorScreen);
+            // Prepopulate with sample if empty
+            if (!quizEditor.value.trim()) {
+                quizEditor.value = JSON.stringify(sampleQuizData, null, 2);
+            }
+        }
+        
+        function saveAndStartQuiz() {
+            try {
+                const quizData = JSON.parse(quizEditor.value);
+                if (!Array.isArray(quizData) || quizData.length === 0) {
+                    throw new Error('Quiz must be a non-empty array of questions');
+                }
+                
+                // Validate each question
+                quizData.forEach((question, index) => {
+                    if (!question.question || !Array.isArray(question.options) || 
+                        question.options.length < 2 || 
+                        typeof question.correct !== 'number' ||
+                        question.correct < 0 || 
+                        question.correct >= question.options.length) {
+                        throw new Error(`Question #${index + 1} is invalid. Each question needs a question text, at least 2 options, and a valid correct answer index.`);
+                    }
+                });
+                
+                editorError.textContent = '';
+                shouldRandomizeOptions = editorRandomizeToggle.checked;
+                startQuiz(quizData);
+            } catch (error) {
+                editorError.textContent = error.message;
+            }
+        }
+        
+        function startQuiz(quizData) {
+            // Make a deep copy of the quiz data to prevent modifications to the original
+            currentQuestions = JSON.parse(JSON.stringify(quizData));
+            currentQuestionIndex = 0;
+            score = 0;
+            showScreen(quizScreen);
+            displayQuestion();
+        }
+        
+        // Fisher-Yates shuffle algorithm
+        function shuffleArray(array) {
+            const newArray = [...array]; // Create a copy to avoid modifying the original
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+        
+        function displayQuestion() {
+            const question = currentQuestions[currentQuestionIndex];
+            questionText.textContent = question.question;
+            
+            // Update progress bar
+            const progress = ((currentQuestionIndex) / currentQuestions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+            
+            // Prepare options with randomization if enabled
+            let displayOptions = [];
+            currentOptionsMapping = [];
+            
+            if (shouldRandomizeOptions) {
+                // Create a mapping from display positions to original positions
+                const indices = Array.from({ length: question.options.length }, (_, i) => i);
+                const shuffledIndices = shuffleArray(indices);
+                
+                // Create display options in shuffled order
+                shuffledIndices.forEach(originalIndex => {
+                    displayOptions.push(question.options[originalIndex]);
+                    currentOptionsMapping.push(originalIndex);
+                });
+            } else {
+                // No randomization, use original order
+                displayOptions = [...question.options];
+                currentOptionsMapping = Array.from({ length: question.options.length }, (_, i) => i);
+            }
+            
+            // Add options to the DOM
+            displayOptions.forEach((option, displayIndex) => {
+                const optionElement = document.createElement('div');
+                optionElement.classList.add('option');
+                optionElement.textContent = option;
+                optionElement.addEventListener('click', () => selectOption(displayIndex));
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Reset state
+            nextButton.textContent = 'Next Question';
+            feedbackElement.style.display = 'none';
+            selectedOptionIndex = -1;
+            answeredCurrentQuestion = false;
+        }
+        
+        function selectOption(displayIndex) {
+            if (answeredCurrentQuestion) return;
+            
+            const question = currentQuestions[currentQuestionIndex];
+            const options = optionsContainer.querySelectorAll('.option');
+            
+            // Convert display index to original index using our mapping
+            const originalIndex = currentOptionsMapping[displayIndex];
+            
+            // Find the display index of the correct answer
+            const correctDisplayIndex = currentOptionsMapping.findIndex(index => index === question.correct);
+            
+            // Clear previous selection
+            options.forEach(option => option.classList.remove('selected'));
+            
+            // Mark new selection
+            options[displayIndex].classList.add('selected');
+            selectedOptionIndex = displayIndex;
+            
+            // Check answer
+            if (originalIndex === question.correct) {
+                options[displayIndex].classList.add('correct');
+                feedbackElement.textContent = 'Correct!';
+                feedbackElement.className = 'feedback correct';
+                score++;
+            } else {
+                options[displayIndex].classList.add('incorrect');
+                options[correctDisplayIndex].classList.add('correct');
+                feedbackElement.textContent = 'Incorrect. The correct answer is: ' + question.options[question.correct];
+                feedbackElement.className = 'feedback incorrect';
+            }
+            
+            feedbackElement.style.display = 'block';
+            answeredCurrentQuestion = true;
+            
+            // Change button text on last question
+            if (currentQuestionIndex === currentQuestions.length - 1) {
+                nextButton.textContent = 'See Results';
+            }
+        }
+        
+        function handleNextButtonClick() {
+            if (!answeredCurrentQuestion && selectedOptionIndex === -1) {
+                // If no answer selected, prompt user to select one
+                feedbackElement.textContent = 'Please select an answer before continuing';
+                feedbackElement.className = 'feedback incorrect';
+                feedbackElement.style.display = 'block';
+                return;
+            }
+            
+            if (currentQuestionIndex < currentQuestions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else {
+                showResults();
+            }
+        }
+        
+        function showResults() {
+            showScreen(resultsScreen);
+            
+            const percentage = Math.round((score / currentQuestions.length) * 100);
+            percentageElement.textContent = `${percentage}%`;
+            scoreElement.textContent = score;
+            totalElement.textContent = currentQuestions.length;
+        }
+        
+        function restartQuiz() {
+            if (currentQuestions.length > 0) {
+                currentQuestionIndex = 0;
+                score = 0;
+                showScreen(quizScreen);
+                displayQuestion();
+            } else {
+                showWelcomeScreen();
+            }
+        }
+    </script>
+</body>
+</html>
